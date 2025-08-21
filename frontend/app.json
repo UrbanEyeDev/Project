@@ -1,0 +1,64 @@
+{
+  "expo": {
+    "name": "UrbanEye",
+    "slug": "urbaneye",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "UrbanEye needs access to your camera to take photos of civic issues.",
+        "NSPhotoLibraryUsageDescription": "UrbanEye needs access to your photo library to select images of civic issues.",
+        "NSLocationWhenInUseUsageDescription": "UrbanEye needs access to your location to accurately report civic issues."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow UrbanEye to access your camera to take photos of civic issues."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow UrbanEye to access your photo library to select images of civic issues."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow UrbanEye to access your location to accurately report civic issues."
+        }
+      ]
+    ],
+    "scheme": "urbaneye"
+  }
+}
