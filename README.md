@@ -52,8 +52,9 @@ A modern, cross-platform mobile application that empowers citizens to report civ
 
 4. **Set up Supabase backend**
 
-   - Follow the instructions in `backend/supabase_setup.md`
-   - Create the database schema and storage bucket
+   - Create a new Supabase project at [supabase.com](https://supabase.com)
+   - Set up authentication and storage
+   - Create the database schema for issues
 
 5. **Start the development server**
 
@@ -69,8 +70,6 @@ A modern, cross-platform mobile application that empowers citizens to report civ
 
 ```
 UrbanEye/
-├── backend/
-│   └── supabase_setup.md      # Database setup instructions
 ├── frontend/
 │   ├── app/                   # Expo Router screens
 │   │   ├── (tabs)/           # Tab navigation

@@ -16,6 +16,9 @@ import { supabase } from "../lib/supabase";
 export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
 
@@ -47,16 +50,40 @@ export default function AuthScreen() {
   }
 
   async function signUpWithEmail() {
+    // Validate required fields
+    if (
+      !firstName.trim() ||
+      !lastName.trim() ||
+      !email.trim() ||
+      !password.trim()
+    ) {
+      Alert.alert("Error", "Please fill in all required fields");
+      return;
+    }
+
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email: email,
       password: password,
+      options: {
+        data: {
+          first_name: firstName.trim(),
+          last_name: lastName.trim(),
+          phone: phone.trim(),
+        },
+      },
     });
 
     if (error) Alert.alert(error.message);
     else {
-      Alert.alert("Check your email for the confirmation link!");
+      Alert.alert("Success", "Check your email for the confirmation link!");
       setIsSignUp(false);
+      // Clear form
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPhone("");
+      setPassword("");
     }
     setLoading(false);
   }
@@ -75,6 +102,31 @@ export default function AuthScreen() {
         </View>
 
         <View style={styles.formContainer}>
+          {isSignUp && (
+            <>
+              <TextInput
+                style={styles.input}
+                placeholder="First Name *"
+                value={firstName}
+                onChangeText={setFirstName}
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Last Name *"
+                value={lastName}
+                onChangeText={setLastName}
+                autoCapitalize="words"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Phone Number"
+                value={phone}
+                onChangeText={setPhone}
+                keyboardType="phone-pad"
+              />
+            </>
+          )}
           <TextInput
             style={styles.input}
             placeholder="Email"
