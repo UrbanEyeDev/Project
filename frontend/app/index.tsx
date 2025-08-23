@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Switch,
 } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "../lib/supabase";
@@ -21,18 +22,38 @@ export default function AuthScreen() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [stayLoggedIn, setStayLoggedIn] = useState(true);
 
   useEffect(() => {
+    // Check if user is already logged in
+    const checkUser = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (session) {
+          // User is already logged in, redirect to home
+          router.replace("/(tabs)/home");
+        }
+      } catch (error) {
+        console.error("Error checking user session:", error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
     checkUser();
   }, []);
 
-  async function checkUser() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (session) {
-      router.replace("/(tabs)/home");
-    }
+  // Show loading screen while checking authentication
+  if (isInitializing) {
+    return (
+      <View style={[styles.container, styles.loadingContainer]}>
+        <Text style={styles.logo}>UrbanEye</Text>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
   }
 
   async function signInWithEmail() {
@@ -144,6 +165,18 @@ export default function AuthScreen() {
             autoCapitalize="none"
           />
 
+          {!isSignUp && (
+            <View style={styles.stayLoggedInContainer}>
+              <Text style={styles.stayLoggedInText}>Stay logged in</Text>
+              <Switch
+                value={stayLoggedIn}
+                onValueChange={setStayLoggedIn}
+                trackColor={{ false: "#e0e0e0", true: "#3498db" }}
+                thumbColor={stayLoggedIn ? "#ffffff" : "#f4f3f4"}
+              />
+            </View>
+          )}
+
           <TouchableOpacity
             style={styles.button}
             onPress={isSignUp ? signUpWithEmail : signInWithEmail}
@@ -236,5 +269,25 @@ const styles = StyleSheet.create({
   switchText: {
     color: "#3498db",
     fontSize: 14,
+  },
+  loadingContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    fontSize: 18,
+    color: "#7f8c8d",
+    marginTop: 20,
+  },
+  stayLoggedInContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 15,
+    paddingHorizontal: 5,
+  },
+  stayLoggedInText: {
+    fontSize: 14,
+    color: "#7f8c8d",
   },
 });

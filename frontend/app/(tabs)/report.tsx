@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
-  TextInput,
   TouchableOpacity,
   StyleSheet,
   Alert,
@@ -10,14 +9,16 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  Dimensions,
   Linking,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as Location from "expo-location";
+import * as FileSystem from "expo-file-system";
 import { router } from "expo-router";
-import { supabase, uploadImageToStorage } from "../../lib/supabase";
+import { supabase } from "../../lib/supabase";
+import { uploadImage, generateUniqueFileName } from "../../utils/uploadImage";
 import {
   analyzeImageWithGemini,
   imageUriToBase64,
@@ -25,58 +26,6 @@ import {
 } from "../../lib/gemini";
 
 import ImageWithLoader from "../../components/ImageWithLoader";
-
-// Conditional map import for different platforms
-let MapView: any = null;
-let Marker: any = null;
-
-if (Platform.OS === "web") {
-  // Web fallback - show coordinates instead of map
-  MapView = ({ children, style, ...props }: any) => (
-    <View
-      style={[
-        style,
-        {
-          backgroundColor: "#f0f0f0",
-          justifyContent: "center",
-          alignItems: "center",
-        },
-      ]}
-    >
-      <Ionicons name="map-outline" size={48} color="#bdc3c7" />
-      <Text style={{ color: "#6c757d", marginTop: 8, textAlign: "center" }}>
-        Map view not available on web
-      </Text>
-    </View>
-  );
-  Marker = ({ children }: any) => <View>{children}</View>;
-} else {
-  try {
-    const Maps = require("react-native-maps");
-    MapView = Maps.default;
-    Marker = Maps.Marker;
-  } catch (error) {
-    // Fallback if maps module is not available
-    MapView = ({ children, style, ...props }: any) => (
-      <View
-        style={[
-          style,
-          {
-            backgroundColor: "#f0f0f0",
-            justifyContent: "center",
-            alignItems: "center",
-          },
-        ]}
-      >
-        <Ionicons name="map-outline" size={48} color="#bdc3c7" />
-        <Text style={{ color: "#6c757d", marginTop: 8, textAlign: "center" }}>
-          Maps not available
-        </Text>
-      </View>
-    );
-    Marker = ({ children }: any) => <View>{children}</View>;
-  }
-}
 
 export default function ReportScreen() {
   const [image, setImage] = useState<string | null>(null);
@@ -90,10 +39,8 @@ export default function ReportScreen() {
   const [locationPermission, setLocationPermission] =
     useState<Location.PermissionStatus | null>(null);
 
-  // Check location permission on component mount
   useEffect(() => {
     checkLocationPermission();
-    // Removed auto-capture location to prevent continuous updates
   }, []);
 
   const checkLocationPermission = async () => {
@@ -110,19 +57,17 @@ export default function ReportScreen() {
   const getCurrentLocation = async () => {
     setLocationLoading(true);
     try {
-      // Check if we have permission
       if (locationPermission !== Location.PermissionStatus.GRANTED) {
         const permissionStatus = await requestLocationPermission();
         if (permissionStatus !== Location.PermissionStatus.GRANTED) {
           Alert.alert(
             "Location Permission Required",
-            "UrbanEye needs access to your location to accurately report civic issues. Please enable location access in your device settings."
+            "UrbanEye needs access to your location to accurately report civic issues."
           );
           return;
         }
       }
 
-      // Get current location
       const currentLocation = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
@@ -138,51 +83,47 @@ export default function ReportScreen() {
       console.error("Error getting location:", error);
       Alert.alert(
         "Location Error",
-        "Could not get your current location. Please check your GPS settings and try again."
+        "Could not get your current location. Please check your GPS settings."
       );
     } finally {
       setLocationLoading(false);
     }
   };
 
-  const uploadImage = async (uri: string): Promise<string> => {
+  const compressImage = async (uri: string): Promise<string> => {
     try {
-      console.log("Starting image upload to Supabase Storage...");
-      console.log("Image URI:", uri);
+      const result = await ImageManipulator.manipulateAsync(
+        uri,
+        [{ resize: { width: 1024 } }],
+        {
+          compress: 0.8,
+          format: ImageManipulator.SaveFormat.JPEG,
+        }
+      );
+      return result.uri;
+    } catch (error) {
+      console.error("Image compression failed:", error);
+      return uri;
+    }
+  };
 
-      // Convert image URI to blob
-      console.log("Converting URI to blob...");
-      const response = await fetch(uri);
-      console.log("Fetch response status:", response.status);
-      console.log("Fetch response headers:", response.headers);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  const uploadImageToStorage = async (uri: string): Promise<string> => {
+    try {
+      if (!uri.startsWith("file://") && !uri.startsWith("content://")) {
+        throw new Error("Invalid image URI format. Please take a new photo.");
       }
 
-      const blob = await response.blob();
-      console.log("Blob created successfully");
-      console.log("Blob size:", blob.size, "bytes");
-      console.log("Blob type:", blob.type);
+      const compressedUri = await compressImage(uri);
+      const fileName = generateUniqueFileName(compressedUri);
+      const result = await uploadImage(compressedUri, fileName);
 
-      // Generate unique filename
-      const timestamp = Date.now();
-      const randomString = Math.random().toString(36).substring(2, 15);
-      const fileName = `issue-${timestamp}-${randomString}.jpg`;
+      if (!result.success || !result.publicUrl) {
+        throw new Error(result.error || "Upload failed");
+      }
 
-      console.log("Uploading image with filename:", fileName);
-
-      // Upload to Supabase Storage
-      const imageUrl = await uploadImageToStorage(blob, fileName);
-      console.log("Image uploaded successfully to storage, URL:", imageUrl);
-      return imageUrl;
+      return result.publicUrl;
     } catch (error) {
-      console.error("Error in uploadImage function:", error);
-      console.error("Error details:", {
-        message: error instanceof Error ? error.message : String(error),
-        stack: error instanceof Error ? error.stack : undefined,
-        name: error instanceof Error ? error.name : "Unknown",
-      });
+      console.error("Upload error:", error);
       throw error;
     }
   };
@@ -192,16 +133,8 @@ export default function ReportScreen() {
 
     setAnalyzing(true);
     try {
-      console.log("Starting AI analysis of image...");
-
-      // Convert image to base64 for Gemini AI
       const base64Image = await imageUriToBase64(imageUri);
-      console.log("Image converted to base64, length:", base64Image.length);
-
-      // Analyze with Gemini AI
       const analysis = await analyzeImageWithGemini(base64Image);
-      console.log("AI analysis completed:", analysis);
-
       setAiAnalysis(analysis);
 
       Alert.alert(
@@ -233,11 +166,17 @@ export default function ReportScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
       quality: 1.0,
+      exif: false,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImage(result.assets[0].uri);
-      setAiAnalysis(null); // Reset AI analysis for new image
+      const imageUri = result.assets[0].uri;
+      if (imageUri.startsWith("file://") || imageUri.startsWith("content://")) {
+        setImage(imageUri);
+        setAiAnalysis(null);
+      } else {
+        Alert.alert("Error", "Invalid image format. Please try again.");
+      }
     }
   };
 
@@ -255,11 +194,17 @@ export default function ReportScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: false,
       quality: 1.0,
+      exif: false,
     });
 
     if (!result.canceled && result.assets[0]) {
-      setImage(result.assets[0].uri);
-      setAiAnalysis(null); // Reset AI analysis for new image
+      const imageUri = result.assets[0].uri;
+      if (imageUri.startsWith("file://") || imageUri.startsWith("content://")) {
+        setImage(imageUri);
+        setAiAnalysis(null);
+      } else {
+        Alert.alert("Error", "Invalid image format. Please try again.");
+      }
     }
   };
 
@@ -283,82 +228,45 @@ export default function ReportScreen() {
     setLoading(true);
 
     try {
-      console.log("Starting report submission...");
+      const imageUrl = await uploadImageToStorage(image);
 
-      // Upload image to Supabase Storage
-      console.log("Uploading image...");
-      const imageUrl = await uploadImage(image);
-      console.log("Image uploaded successfully, URL:", imageUrl);
-
-      // Get current user
-      console.log("Getting current user...");
       const {
         data: { user },
         error: userError,
       } = await supabase.auth.getUser();
-
-      if (userError) {
-        console.error("Error getting user:", userError);
-        throw userError;
+      if (userError || !user) {
+        throw new Error("Please log in to submit a report");
       }
 
-      if (!user) {
-        throw new Error("User not authenticated");
-      }
-
-      console.log("User authenticated:", user.id);
-
-      // Prepare AI description
-      const aiDescription = aiAnalysis
-        ? `AI Analysis: ${
-            aiAnalysis.description
-          }\n\nAI Recommendations: ${aiAnalysis.recommendations.join(
-            ", "
-          )}\n\nAI Severity: ${aiAnalysis.severity}\nAI Confidence: ${
-            aiAnalysis.confidence
-          }%`
-        : null;
-
-      // Insert issue into database
-      console.log("Inserting issue into database...");
-      const { error: insertError } = await supabase.from("issues").insert({
+      const reportData = {
         user_id: user.id,
         issue_type: aiAnalysis.issueType,
         user_description: aiAnalysis.description,
-        ai_description: aiDescription,
+        ai_description: `AI Analysis: ${aiAnalysis.description}\n\nAI Confidence: ${aiAnalysis.confidence}%`,
         image_url: imageUrl,
         status: "reported",
-        latitude: location?.coords.latitude || null,
-        longitude: location?.coords.longitude || null,
-      });
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      };
+
+      const { error: insertError } = await supabase
+        .from("issues")
+        .insert(reportData);
 
       if (insertError) {
-        console.error("Database insert error:", insertError);
         throw insertError;
       }
 
-      console.log("Issue inserted successfully");
-      Alert.alert(
-        "Success!",
-        `Your issue has been reported successfully with location data.\n\nLocation: ${location.coords.latitude.toFixed(
-          6
-        )}, ${location.coords.longitude.toFixed(6)}`,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              router.push("/(tabs)/home");
-            },
-          },
-        ]
-      );
+      Alert.alert("🎉 Success!", "Your issue has been reported successfully!", [
+        { text: "OK", onPress: () => router.push("/(tabs)/home") },
+      ]);
     } catch (error) {
-      console.error("Error submitting report:", error);
+      console.error("Report submission failed:", error);
       Alert.alert(
-        "Error",
-        `Failed to submit report: ${
-          error instanceof Error ? error.message : "Unknown error"
-        }. Please try again.`
+        "❌ Error",
+        error instanceof Error
+          ? error.message
+          : "Failed to submit report. Please try again."
       );
     } finally {
       setLoading(false);
@@ -397,6 +305,7 @@ export default function ReportScreen() {
       style={styles.container}
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Image Section */}
         <View style={styles.imageSection}>
           <Text style={styles.sectionTitle}>Issue Photo</Text>
           {image ? (
@@ -508,13 +417,11 @@ export default function ReportScreen() {
 
           {location ? (
             <View style={styles.locationInfo}>
-              {/* Location Status Header */}
               <View style={styles.locationHeader}>
                 <Ionicons name="location" size={18} color="#27ae60" />
                 <Text style={styles.locationStatusText}>Location Captured</Text>
               </View>
 
-              {/* Compact Location Display */}
               <View style={styles.locationDisplay}>
                 <View style={styles.locationPin}>
                   <Ionicons name="location" size={24} color="#e74c3c" />
@@ -530,7 +437,6 @@ export default function ReportScreen() {
                 </View>
               </View>
 
-              {/* Map Actions */}
               <View style={styles.mapActions}>
                 <TouchableOpacity
                   style={styles.mapActionButton}
@@ -582,8 +488,7 @@ export default function ReportScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Issue Details section removed - AI analysis provides all necessary information */}
-
+        {/* Submit Button */}
         <TouchableOpacity
           style={[styles.submitButton, loading && styles.submitButtonDisabled]}
           onPress={submitReport}
@@ -617,10 +522,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
@@ -684,7 +586,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     fontWeight: "600",
   },
-
   submitButton: {
     backgroundColor: "#27ae60",
     padding: 20,
@@ -692,10 +593,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 6,
     elevation: 8,
@@ -724,10 +622,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
@@ -748,10 +643,7 @@ const styles = StyleSheet.create({
     padding: 15,
     marginTop: 15,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 3.84,
     elevation: 3,
@@ -806,20 +698,10 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 20,
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,
-  },
-  locationDescription: {
-    fontSize: 14,
-    color: "#6c757d",
-    lineHeight: 20,
-    marginBottom: 15,
-    textAlign: "center",
   },
   locationInfo: {
     backgroundColor: "#f8f9fa",
@@ -892,10 +774,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 3.84,
     elevation: 5,

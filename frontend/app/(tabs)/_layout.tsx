@@ -1,7 +1,38 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useEffect } from "react";
+import { useRouter } from "expo-router";
+import { supabase } from "../../lib/supabase";
 
 export default function TabLayout() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Check if user is authenticated
+    const checkAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        // Redirect to login if not authenticated
+        router.replace("/");
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "SIGNED_OUT" || !session) {
+        router.replace("/");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [router]);
+
   return (
     <Tabs
       screenOptions={{

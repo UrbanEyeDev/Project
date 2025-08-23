@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import ImageWithLoader from "../../components/ImageWithLoader";
+import { Image } from "react-native";
 
 interface Issue {
   id: number;
@@ -207,14 +208,12 @@ export default function HomeScreen() {
       {/* Professional Header */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <View style={styles.headerLeft}>
-            <View style={styles.logoContainer}>
-              <Ionicons name="eye" size={28} color="#3498db" />
-            </View>
-            <View>
-              <Text style={styles.title}>UrbanEye</Text>
-              <Text style={styles.subtitle}>Civic Issue Management</Text>
-            </View>
+          <View style={styles.logoContainer}>
+            <Image
+              source={require("../../assets/logo.png")}
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
           </View>
         </View>
       </View>
@@ -292,47 +291,30 @@ const styles = StyleSheet.create({
 
   // Header Styles
   header: {
-    backgroundColor: "white",
-    paddingTop: 50,
-    paddingBottom: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e9ecef",
+    backgroundColor: "transparent",
+    paddingTop: -40,
+    paddingBottom: 5,
   },
   headerContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 20,
   },
-  headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   logoContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#ebf3fd",
+    width: 300,
+    height: 300,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: "#2c3e50",
-    marginBottom: 2,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: "#7f8c8d",
-    fontWeight: "500",
+  logoImage: {
+    width: 255,
+    height: 255,
   },
 
   // Quick Actions
   quickActions: {
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 8,
   },
   primaryAction: {
     backgroundColor: "white",

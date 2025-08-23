@@ -241,7 +241,23 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <TouchableOpacity style={styles.logoutButton} onPress={() => {}}>
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={async () => {
+            try {
+              const { error } = await supabase.auth.signOut();
+              if (error) {
+                Alert.alert("Error", "Failed to sign out: " + error.message);
+              } else {
+                // Navigate back to login screen
+                router.replace("/");
+              }
+            } catch (error) {
+              Alert.alert("Error", "Failed to sign out");
+              console.error("Sign out error:", error);
+            }
+          }}
+        >
           <Ionicons name="log-out-outline" size={20} color="#e74c3c" />
           <Text style={styles.logoutText}>Sign Out</Text>
         </TouchableOpacity>
