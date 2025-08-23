@@ -1,284 +1,119 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   View,
   Text,
-  FlatList,
   StyleSheet,
-  RefreshControl,
   TouchableOpacity,
-  Alert,
   StatusBar,
+  ScrollView,
+  Linking,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
-import { supabase } from "../../lib/supabase";
-import ImageWithLoader from "../../components/ImageWithLoader";
 import { Image } from "react-native";
 
-interface Issue {
-  id: number;
-  issue_type: string;
-  user_description: string;
-  ai_description: string;
-  image_url: string;
-  status: string;
-  created_at: string;
-  latitude?: number;
-  longitude?: number;
-}
-
 export default function HomeScreen() {
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchIssues();
-  }, []);
-
-  async function fetchIssues() {
+  const openMumbaiMap = async () => {
     try {
-      const { data, error } = await supabase
-        .from("issues")
-        .select("*")
-        .order("created_at", { ascending: false });
+      // Search for Mumbai city in general view
+      const url = `https://www.google.com/maps/search/Mumbai,+Maharashtra,+India`;
 
-      if (error) throw error;
-      setIssues(data || []);
+      // Check if Google Maps app is available
+      const supported = await Linking.canOpenURL(url);
+
+      if (supported) {
+        await Linking.openURL(url);
+      } else {
+        // Fallback to web browser if app is not available
+        await Linking.openURL(url);
+      }
     } catch (error) {
-      Alert.alert("Error", "Failed to fetch issues");
-      console.error("Error fetching issues:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchIssues();
-    setRefreshing(false);
-  };
-
-  const renderIssueCard = ({ item }: { item: Issue }) => (
-    <View style={styles.card}>
-      <View style={styles.imageContainer}>
-        <ImageWithLoader
-          uri={item.image_url}
-          style={styles.issueImage}
-          resizeMode="cover"
-        />
-        <View style={styles.imageOverlay}>
-          <View
-            style={[
-              styles.statusBadge,
-              { backgroundColor: getStatusColor(item.status) },
-            ]}
-          >
-            <Text style={styles.statusText}>
-              {item.status.replace("_", " ")}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.cardContent}>
-        {/* Header with issue type and AI badge */}
-        <View style={styles.cardHeader}>
-          <View style={styles.issueTypeContainer}>
-            <View style={styles.issueIconContainer}>
-              <Ionicons
-                name={getIssueIcon(item.issue_type)}
-                size={18}
-                color="#3498db"
-              />
-            </View>
-            <Text style={styles.issueType}>{item.issue_type}</Text>
-            {item.ai_description && (
-              <View style={styles.aiBadge}>
-                <Ionicons name="sparkles" size={10} color="#27ae60" />
-                <Text style={styles.aiBadgeText}>AI</Text>
-              </View>
-            )}
-          </View>
-        </View>
-
-        {/* User description */}
-        <Text style={styles.description} numberOfLines={2}>
-          {item.user_description}
-        </Text>
-
-        {/* AI Analysis section - only show if exists */}
-        {item.ai_description && (
-          <View style={styles.aiDescriptionContainer}>
-            <View style={styles.aiDescriptionHeader}>
-              <Ionicons name="analytics" size={12} color="#27ae60" />
-              <Text style={styles.aiDescriptionLabel}>AI Analysis</Text>
-            </View>
-            <Text style={styles.aiDescriptionText} numberOfLines={2}>
-              {item.ai_description}
-            </Text>
-          </View>
-        )}
-
-        {/* Footer with timestamp and priority */}
-        <View style={styles.cardFooter}>
-          <View style={styles.timestampContainer}>
-            <Ionicons name="time-outline" size={12} color="#95a5a6" />
-            <Text style={styles.timestamp}>
-              {new Date(item.created_at).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </Text>
-          </View>
-
-          <View style={styles.severityIndicator}>
-            <View
-              style={[
-                styles.severityDot,
-                { backgroundColor: getSeverityColor(item.ai_description) },
-              ]}
-            />
-            <Text style={styles.severityText}>Priority</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "reported":
-        return "#3498db";
-      case "in_progress":
-        return "#f39c12";
-      case "resolved":
-        return "#27ae60";
-      default:
-        return "#95a5a6";
+      Alert.alert(
+        "Error",
+        "Unable to open Google Maps. Please make sure Google Maps is installed on your device.",
+        [{ text: "OK" }]
+      );
     }
   };
-
-  const getSeverityColor = (aiDescription: string) => {
-    if (!aiDescription) return "#95a5a6";
-    const lowerDesc = aiDescription.toLowerCase();
-    if (lowerDesc.includes("high") || lowerDesc.includes("urgent"))
-      return "#e74c3c";
-    if (lowerDesc.includes("medium")) return "#f39c12";
-    return "#27ae60";
-  };
-
-  const getIssueIcon = (issueType: string) => {
-    const type = issueType.toLowerCase();
-    if (type.includes("garbage") || type.includes("waste"))
-      return "trash-outline";
-    if (
-      type.includes("pothole") ||
-      type.includes("road") ||
-      type.includes("damage")
-    )
-      return "car-outline";
-    if (type.includes("streetlight") || type.includes("lighting"))
-      return "bulb-outline";
-    if (type.includes("water") || type.includes("drainage"))
-      return "water-outline";
-    if (type.includes("traffic") || type.includes("sign")) return "car-sport";
-    if (type.includes("sidewalk")) return "walk-outline";
-    return "alert-circle-outline";
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <View style={styles.loadingContent}>
-          <View style={styles.loadingSpinner}>
-            <Ionicons name="refresh" size={32} color="#3498db" />
-          </View>
-          <Text style={styles.loadingText}>Loading issues...</Text>
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-
-      {/* Professional Header */}
+      <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
+      {/* Logo Header */}
       <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View style={styles.logoContainer}>
-            <Image
-              source={require("../../assets/logo.png")}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-          </View>
+        <View style={styles.logoContainer}>
+          <Image
+            source={require("../../assets/logo.png")}
+            style={styles.logo}
+          />
         </View>
       </View>
 
-      {/* Quick Actions */}
-      <View style={styles.quickActions}>
-        <TouchableOpacity
-          style={styles.primaryAction}
-          onPress={() => router.push("/(tabs)/report")}
-        >
-          <View style={styles.primaryActionIcon}>
-            <Ionicons name="add" size={24} color="white" />
-          </View>
-          <View style={styles.primaryActionText}>
-            <Text style={styles.primaryActionTitle}>Report Issue</Text>
-            <Text style={styles.primaryActionSubtitle}>Submit new problem</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={20} color="#3498db" />
-        </TouchableOpacity>
-      </View>
-
-      {/* Issues List */}
-      <View style={styles.issuesSection}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Issues</Text>
-          <Text style={styles.issueCount}>{issues.length} total</Text>
-        </View>
-
-        <FlatList
-          data={issues}
-          renderItem={renderIssueCard}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <View style={styles.emptyIcon}>
-                <Ionicons name="document-outline" size={48} color="#bdc3c7" />
+      <View style={styles.content}>
+        {/* Quick Actions Section */}
+        <View style={styles.quickActionsSection}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push("/(tabs)/report")}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: "#e74c3c" }]}>
+                <Ionicons name="camera" size={24} color="white" />
               </View>
-              <Text style={styles.emptyText}>No issues reported yet</Text>
-              <Text style={styles.emptySubtext}>
-                Be the first to report a civic issue in your area
-              </Text>
-              <TouchableOpacity
-                style={styles.emptyActionButton}
-                onPress={() => router.push("/(tabs)/report")}
-              >
-                <Text style={styles.emptyActionText}>Report First Issue</Text>
-              </TouchableOpacity>
-            </View>
-          }
-        />
-      </View>
+              <Text style={styles.actionText}>Report Issue</Text>
+            </TouchableOpacity>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => router.push("/(tabs)/report")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={24} color="white" />
-      </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => router.push("/(tabs)/history")}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: "#1abc9c" }]}>
+                <Ionicons name="list" size={24} color="white" />
+              </View>
+              <Text style={styles.actionText}>My Complaints</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={openMumbaiMap}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: "#3498db" }]}>
+                <Ionicons name="map" size={24} color="white" />
+              </View>
+              <Text style={styles.actionText}>City Map</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* City Overview Section */}
+        <View style={styles.overviewSection}>
+          <Text style={styles.sectionTitle}>City Overview</Text>
+          <View style={styles.statsContainer}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: "#e74c3c" }]}>
+                1,247
+              </Text>
+              <Text style={styles.statLabel}>Total Issues</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: "#1abc9c" }]}>892</Text>
+              <Text style={styles.statLabel}>Resolved</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: "#3498db" }]}>234</Text>
+              <Text style={styles.statLabel}>In Progress</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statNumber, { color: "#f39c12" }]}>
+                2.3h
+              </Text>
+              <Text style={styles.statLabel}>Response Time</Text>
+            </View>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }
@@ -286,317 +121,104 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#1a1a1a",
   },
 
-  // Header Styles
+  // Header
   header: {
-    backgroundColor: "transparent",
-    paddingTop: -40,
-    paddingBottom: 5,
-  },
-  headerContent: {
-    justifyContent: "center",
-    alignItems: "center",
+    paddingTop: 10,
+    paddingBottom: 20,
     paddingHorizontal: 20,
+    backgroundColor: "#1a1a1a",
+    alignItems: "center",
+    justifyContent: "center",
   },
   logoContainer: {
-    width: 300,
-    height: 300,
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
   },
-  logoImage: {
-    width: 255,
-    height: 255,
+  logo: {
+    width: 200,
+    height: 200,
+    resizeMode: "contain",
   },
 
-  // Quick Actions
-  quickActions: {
+  // Content
+  content: {
     paddingHorizontal: 20,
-    paddingVertical: 8,
+    paddingTop: 10,
+    flex: 1,
+    justifyContent: "flex-start",
   },
-  primaryAction: {
-    backgroundColor: "white",
+
+  // Quick Actions Section
+  quickActionsSection: {
+    marginBottom: 10,
+    backgroundColor: "#2a2a2a",
+    padding: 16,
     borderRadius: 16,
-    padding: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  primaryActionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "#3498db",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 16,
-  },
-  primaryActionText: {
-    flex: 1,
-  },
-  primaryActionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#2c3e50",
-    marginBottom: 4,
-  },
-  primaryActionSubtitle: {
-    fontSize: 14,
-    color: "#7f8c8d",
-  },
-
-  // Issues Section
-  issuesSection: {
-    flex: 1,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingVertical: 16,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#2c3e50",
-  },
-  issueCount: {
-    fontSize: 14,
-    color: "#7f8c8d",
-    fontWeight: "500",
-  },
-
-  // List Container
-  listContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-
-  // Card Styles
-  card: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
-    overflow: "hidden",
-  },
-  imageContainer: {
-    width: "100%",
-    height: 160,
-    position: "relative",
-  },
-  issueImage: {
-    width: "100%",
-    height: "100%",
-  },
-  imageOverlay: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 2,
-  },
-  statusText: {
     color: "white",
-    fontSize: 10,
-    fontWeight: "600",
-    textTransform: "capitalize",
+    marginBottom: 20,
   },
-
-  cardContent: {
-    padding: 16,
-  },
-  cardHeader: {
-    marginBottom: 10,
-  },
-  issueTypeContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  issueIconContainer: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#f8f9fa",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10,
-  },
-  issueType: {
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#2c3e50",
-    flex: 1,
-  },
-  aiBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#e8f5e8",
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginLeft: 6,
-  },
-  aiBadgeText: {
-    fontSize: 9,
-    color: "#27ae60",
-    fontWeight: "600",
-    marginLeft: 3,
-  },
-
-  description: {
-    fontSize: 13,
-    color: "#34495e",
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-
-  aiDescriptionContainer: {
-    backgroundColor: "#f8f9fa",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 12,
-    borderLeftWidth: 2,
-    borderLeftColor: "#27ae60",
-  },
-  aiDescriptionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 6,
-  },
-  aiDescriptionLabel: {
-    fontSize: 11,
-    color: "#27ae60",
-    fontWeight: "600",
-    marginLeft: 5,
-  },
-  aiDescriptionText: {
-    fontSize: 12,
-    color: "#5a6c7d",
-    lineHeight: 16,
-  },
-
-  cardFooter: {
+  quickActionsGrid: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: 4,
+    width: "100%",
   },
-  timestampContainer: {
-    flexDirection: "row",
+  actionButton: {
+    width: "30%",
     alignItems: "center",
   },
-  timestamp: {
-    fontSize: 11,
-    color: "#7f8c8d",
-    marginLeft: 5,
-    fontWeight: "500",
-  },
-  severityIndicator: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  severityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    marginRight: 5,
-  },
-  severityText: {
-    fontSize: 10,
-    color: "#7f8c8d",
-    fontWeight: "500",
-  },
-
-  // Loading States
-  loadingContainer: {
-    flex: 1,
+  actionIcon: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa",
+    marginBottom: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  loadingContent: {
+  actionText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+  },
+
+  // Overview Section
+  overviewSection: {
+    backgroundColor: "#2a2a2a",
+    padding: 16,
+    borderRadius: 16,
+  },
+  statsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+  },
+  statItem: {
+    width: "48%",
     alignItems: "center",
-  },
-  loadingSpinner: {
     marginBottom: 16,
   },
-  loadingText: {
-    fontSize: 16,
-    color: "#7f8c8d",
-    fontWeight: "500",
+  statNumber: {
+    fontSize: 24,
+    fontWeight: "700",
+    marginBottom: 6,
   },
-
-  // Empty State
-  emptyContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 60,
-    paddingHorizontal: 40,
-  },
-  emptyIcon: {
-    marginBottom: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: "#7f8c8d",
-    fontWeight: "600",
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  emptySubtext: {
-    fontSize: 14,
-    color: "#bdc3c7",
-    textAlign: "center",
-    lineHeight: 20,
-    marginBottom: 24,
-  },
-  emptyActionButton: {
-    backgroundColor: "#3498db",
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 24,
-  },
-  emptyActionText: {
+  statLabel: {
+    fontSize: 12,
     color: "white",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-
-  // Floating Action Button
-  fab: {
-    position: "absolute",
-    right: 20,
-    bottom: 20,
-    backgroundColor: "#3498db",
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    textAlign: "center",
+    fontWeight: "500",
   },
 });

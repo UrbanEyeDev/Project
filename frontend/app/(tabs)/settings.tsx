@@ -135,13 +135,6 @@ export default function SettingsScreen() {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Settings</Text>
-        <Text style={styles.headerSubtitle}>
-          Customize your UrbanEye experience
-        </Text>
-      </View>
-
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Account</Text>
         <View style={styles.sectionContent}>
@@ -182,6 +175,7 @@ export default function SettingsScreen() {
                     handleProfileInputChange("firstName", value)
                   }
                   placeholder="Enter first name"
+                  placeholderTextColor="#666"
                 />
               </View>
 
@@ -194,6 +188,7 @@ export default function SettingsScreen() {
                     handleProfileInputChange("lastName", value)
                   }
                   placeholder="Enter last name"
+                  placeholderTextColor="#666"
                 />
               </View>
 
@@ -206,6 +201,7 @@ export default function SettingsScreen() {
                     handleProfileInputChange("email", value)
                   }
                   placeholder="Enter email address"
+                  placeholderTextColor="#666"
                   keyboardType="email-address"
                   autoCapitalize="none"
                 />
@@ -220,6 +216,7 @@ export default function SettingsScreen() {
                     handleProfileInputChange("phone", value)
                   }
                   placeholder="Enter phone number"
+                  placeholderTextColor="#666"
                   keyboardType="phone-pad"
                 />
               </View>
@@ -333,36 +330,20 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
-  },
-  header: {
-    padding: 20,
-    backgroundColor: "#3498db",
-    alignItems: "center",
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    color: "white",
-    marginBottom: 5,
-  },
-  headerSubtitle: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
-    textAlign: "center",
+    backgroundColor: "#1a1a1a",
   },
   section: {
-    marginTop: 20,
+    marginTop: 10,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#2c3e50",
+    color: "white",
     marginLeft: 20,
     marginBottom: 10,
   },
   sectionContent: {
-    backgroundColor: "white",
+    backgroundColor: "#2a2a2a",
     marginHorizontal: 20,
     borderRadius: 12,
     overflow: "hidden",
@@ -374,7 +355,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#444",
   },
   settingItemLeft: {
     flexDirection: "row",
@@ -385,7 +366,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#333",
     alignItems: "center",
     justifyContent: "center",
     marginRight: 15,
@@ -396,12 +377,12 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#2c3e50",
+    color: "white",
     marginBottom: 2,
   },
   settingSubtitle: {
     fontSize: 14,
-    color: "#7f8c8d",
+    color: "#999",
   },
   settingItemRight: {
     alignItems: "center",
@@ -411,7 +392,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "white",
+    backgroundColor: "#2a2a2a",
     marginHorizontal: 20,
     paddingVertical: 16,
     borderRadius: 12,
@@ -437,7 +418,7 @@ const styles = StyleSheet.create({
     zIndex: 1000,
   },
   modalContent: {
-    backgroundColor: "white",
+    backgroundColor: "#2a2a2a",
     borderRadius: 16,
     margin: 20,
     maxHeight: "80%",
@@ -457,12 +438,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    borderBottomColor: "#444",
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: "white",
   },
   closeButton: {
     padding: 5,
@@ -473,14 +454,14 @@ const styles = StyleSheet.create({
   modalDescription: {
     fontSize: 16,
     lineHeight: 24,
-    color: "#34495e",
+    color: "#ccc",
     marginBottom: 16,
     textAlign: "justify",
   },
   teamTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#2c3e50",
+    color: "white",
     marginTop: 8,
     marginBottom: 16,
   },
@@ -495,18 +476,18 @@ const styles = StyleSheet.create({
   },
   teamMemberText: {
     fontSize: 16,
-    color: "#34495e",
+    color: "#ccc",
     flex: 1,
   },
   // Profile form styles
   profileForm: {
-    backgroundColor: "white",
+    backgroundColor: "#2a2a2a",
     marginHorizontal: 20,
     marginTop: 15,
     borderRadius: 12,
     padding: 20,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: "#444",
   },
   profileFormHeader: {
     flexDirection: "row",
@@ -517,7 +498,7 @@ const styles = StyleSheet.create({
   profileFormTitle: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#2c3e50",
+    color: "white",
   },
   profileFormActions: {
     flexDirection: "row",
@@ -529,7 +510,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   profileCancelButtonText: {
-    color: "#7f8c8d",
+    color: "#999",
     fontSize: 16,
     fontWeight: "500",
   },
@@ -550,17 +531,17 @@ const styles = StyleSheet.create({
   profileInputLabel: {
     fontSize: 16,
     fontWeight: "500",
-    color: "#2c3e50",
+    color: "white",
     marginBottom: 8,
   },
   profileInput: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#333",
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: "#444",
     borderRadius: 8,
     paddingHorizontal: 16,
     paddingVertical: 12,
     fontSize: 16,
-    color: "#2c3e50",
+    color: "white",
   },
 });

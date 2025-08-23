@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   Switch,
+  Image,
 } from "react-native";
 import { router } from "expo-router";
 import { supabase } from "../lib/supabase";
@@ -50,7 +51,11 @@ export default function AuthScreen() {
   if (isInitializing) {
     return (
       <View style={[styles.container, styles.loadingContainer]}>
-        <Text style={styles.logo}>UrbanEye</Text>
+        <Image
+          source={require("../assets/logo.png")}
+          style={styles.logo}
+          resizeMode="contain"
+        />
         <Text style={styles.loadingText}>Loading...</Text>
       </View>
     );
@@ -116,10 +121,11 @@ export default function AuthScreen() {
     >
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         <View style={styles.logoContainer}>
-          <Text style={styles.logo}>UrbanEye</Text>
-          <Text style={styles.tagline}>
-            Empowering Citizens, One Report at a Time
-          </Text>
+          <Image
+            source={require("../assets/logo.png")}
+            style={styles.logo}
+            resizeMode="contain"
+          />
         </View>
 
         <View style={styles.formContainer}>
@@ -128,6 +134,7 @@ export default function AuthScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="First Name *"
+                placeholderTextColor="#666"
                 value={firstName}
                 onChangeText={setFirstName}
                 autoCapitalize="words"
@@ -135,6 +142,7 @@ export default function AuthScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Last Name *"
+                placeholderTextColor="#666"
                 value={lastName}
                 onChangeText={setLastName}
                 autoCapitalize="words"
@@ -142,6 +150,7 @@ export default function AuthScreen() {
               <TextInput
                 style={styles.input}
                 placeholder="Phone Number"
+                placeholderTextColor="#666"
                 value={phone}
                 onChangeText={setPhone}
                 keyboardType="phone-pad"
@@ -151,6 +160,7 @@ export default function AuthScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
+            placeholderTextColor="#666"
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -159,6 +169,7 @@ export default function AuthScreen() {
           <TextInput
             style={styles.input}
             placeholder="Password"
+            placeholderTextColor="#666"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -206,32 +217,26 @@ export default function AuthScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#1a1a1a",
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: "center",
     padding: 20,
+    paddingTop: 40,
   },
   logoContainer: {
     alignItems: "center",
-    marginBottom: 50,
+    marginBottom: 30,
+    marginTop: 20,
   },
   logo: {
-    fontSize: 48,
-    fontWeight: "bold",
-    color: "#2c3e50",
-    marginBottom: 10,
-  },
-  tagline: {
-    fontSize: 16,
-    color: "#7f8c8d",
-    textAlign: "center",
-    lineHeight: 22,
+    width: 160,
+    height: 160,
+    marginBottom: 20,
   },
   formContainer: {
-    backgroundColor: "white",
-    padding: 30,
+    backgroundColor: "#2a2a2a",
+    padding: 25,
     borderRadius: 15,
     shadowColor: "#000",
     shadowOffset: {
@@ -244,19 +249,20 @@ const styles = StyleSheet.create({
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#444",
     borderRadius: 8,
     padding: 15,
-    marginBottom: 15,
+    marginBottom: 12,
     fontSize: 16,
-    backgroundColor: "#fafafa",
+    backgroundColor: "#333",
+    color: "white",
   },
   button: {
     backgroundColor: "#3498db",
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 12,
   },
   buttonText: {
     color: "white",
@@ -276,7 +282,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     fontSize: 18,
-    color: "#7f8c8d",
+    color: "#999",
     marginTop: 20,
   },
   stayLoggedInContainer: {
@@ -288,6 +294,6 @@ const styles = StyleSheet.create({
   },
   stayLoggedInText: {
     fontSize: 14,
-    color: "#7f8c8d",
+    color: "#999",
   },
 });

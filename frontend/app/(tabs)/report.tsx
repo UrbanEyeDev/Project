@@ -23,6 +23,7 @@ import {
   analyzeImageWithGemini,
   imageUriToBase64,
   AIAnalysisResult,
+  cleanMarkdownText,
 } from "../../lib/gemini";
 
 import ImageWithLoader from "../../components/ImageWithLoader";
@@ -511,13 +512,13 @@ export default function ReportScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#1a1a1a",
   },
   scrollContainer: {
     padding: 20,
   },
   imageSection: {
-    backgroundColor: "white",
+    backgroundColor: "#2a2a2a",
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
@@ -530,7 +531,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: "white",
     marginBottom: 16,
   },
   imagePreviewContainer: {
@@ -553,17 +554,17 @@ const styles = StyleSheet.create({
   imagePlaceholder: {
     width: "100%",
     height: 200,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#333",
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: "#e9ecef",
+    borderColor: "#444",
     borderStyle: "dashed",
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 16,
   },
   placeholderText: {
-    color: "#6c757d",
+    color: "#999",
     marginTop: 8,
     fontSize: 14,
   },
@@ -576,7 +577,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#3498db",
+    backgroundColor: "#1abc9c",
     padding: 12,
     borderRadius: 8,
     marginHorizontal: 4,
@@ -587,7 +588,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   submitButton: {
-    backgroundColor: "#27ae60",
+    backgroundColor: "#e74c3c",
     padding: 20,
     borderRadius: 16,
     alignItems: "center",
@@ -599,7 +600,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   submitButtonDisabled: {
-    backgroundColor: "#95a5a6",
+    backgroundColor: "#666",
     shadowOpacity: 0.1,
     elevation: 4,
   },
@@ -614,7 +615,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   aiButton: {
-    backgroundColor: "#9b59b6",
+    backgroundColor: "#f39c12",
     padding: 15,
     borderRadius: 12,
     alignItems: "center",
@@ -628,7 +629,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   aiButtonDisabled: {
-    backgroundColor: "#d3d3d3",
+    backgroundColor: "#666",
     shadowOpacity: 0.05,
     elevation: 2,
   },
@@ -638,7 +639,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   aiAnalysisContainer: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#333",
     borderRadius: 12,
     padding: 15,
     marginTop: 15,
@@ -656,7 +657,7 @@ const styles = StyleSheet.create({
   aiHeaderText: {
     fontSize: 16,
     fontWeight: "bold",
-    color: "#34495e",
+    color: "white",
     marginLeft: 8,
   },
   aiResultRow: {
@@ -666,13 +667,13 @@ const styles = StyleSheet.create({
   },
   aiLabel: {
     fontSize: 14,
-    color: "#555",
+    color: "#ccc",
     fontWeight: "500",
   },
   aiValue: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#2c3e50",
+    color: "white",
   },
   severityContainer: {
     flexDirection: "row",
@@ -689,11 +690,11 @@ const styles = StyleSheet.create({
   },
   aiDescription: {
     fontSize: 14,
-    color: "#34495e",
+    color: "#ccc",
     lineHeight: 20,
   },
   locationSection: {
-    backgroundColor: "white",
+    backgroundColor: "#2a2a2a",
     borderRadius: 12,
     padding: 16,
     marginBottom: 20,
@@ -704,7 +705,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   locationInfo: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#333",
     borderRadius: 8,
     padding: 12,
     marginBottom: 12,
@@ -729,7 +730,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#444",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 8,
@@ -739,14 +740,14 @@ const styles = StyleSheet.create({
   },
   coordinatesDisplay: {
     fontSize: 13,
-    color: "#2c3e50",
+    color: "white",
     fontWeight: "600",
     marginBottom: 2,
     fontFamily: "monospace",
   },
   accuracyDisplay: {
     fontSize: 11,
-    color: "#7f8c8d",
+    color: "#999",
   },
   locationPlaceholder: {
     alignItems: "center",
@@ -755,19 +756,19 @@ const styles = StyleSheet.create({
   },
   locationPlaceholderText: {
     fontSize: 15,
-    color: "#6c757d",
+    color: "#999",
     marginTop: 6,
     fontWeight: "500",
   },
   locationPlaceholderSubtext: {
     fontSize: 13,
-    color: "#95a5a6",
+    color: "#666",
     marginTop: 3,
     textAlign: "center",
     lineHeight: 18,
   },
   locationButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1abc9c",
     padding: 12,
     borderRadius: 10,
     alignItems: "center",
@@ -780,7 +781,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   locationButtonDisabled: {
-    backgroundColor: "#bdc3c7",
+    backgroundColor: "#666",
     shadowOpacity: 0.05,
     elevation: 2,
   },
@@ -795,19 +796,18 @@ const styles = StyleSheet.create({
   mapActionButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#e8f4fd",
+    backgroundColor: "#333",
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "#d1ecf1",
+    borderColor: "#1abc9c",
     justifyContent: "center",
     alignSelf: "flex-start",
   },
   mapActionText: {
     color: "#3498db",
     fontSize: 11,
-    marginLeft: 4,
     fontWeight: "500",
   },
 });

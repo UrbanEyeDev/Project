@@ -50,11 +50,21 @@ export async function analyzeImageWithGemini(
 
 function parseAIResponse(aiText: string): AIAnalysisResult {
   try {
+    // Clean up the AI text by removing markdown formatting and double asterisks
+    const cleanText = aiText
+      .replace(/\*\*/g, '') // Remove double asterisks
+      .replace(/\*/g, '')   // Remove single asterisks
+      .replace(/`/g, '')    // Remove backticks
+      .replace(/#{1,6}\s/g, '') // Remove markdown headers
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links, keep text
+      .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines with double newlines
+      .trim();
+
     // Default values in case parsing fails
     const defaultResult: AIAnalysisResult = {
       issueType: "Unknown Issue",
       confidence: 70,
-      description: aiText || "AI analysis completed but couldn't parse specific details.",
+      description: cleanText || "AI analysis completed but couldn't parse specific details.",
       severity: "medium",
       recommendations: ["Contact local authorities", "Document the issue with photos"],
     };
@@ -113,7 +123,7 @@ function parseAIResponse(aiText: string): AIAnalysisResult {
 
     // If still no recommendations, use the full text as description
     if (recommendations.length === 0) {
-      description = aiText;
+      description = cleanText;
     }
 
     return {
@@ -157,4 +167,18 @@ export async function imageUriToBase64(uri: string): Promise<string> {
     console.error("Error converting image to base64:", error);
     throw new Error("Failed to convert image to base64");
   }
+}
+
+// Utility function to clean up markdown formatting from any text
+export function cleanMarkdownText(text: string): string {
+  if (!text) return text;
+  
+  return text
+    .replace(/\*\*/g, '') // Remove double asterisks
+    .replace(/\*/g, '')   // Remove single asterisks
+    .replace(/`/g, '')    // Remove backticks
+    .replace(/#{1,6}\s/g, '') // Remove markdown headers
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links, keep text
+    .replace(/\n{3,}/g, '\n\n') // Replace multiple newlines with double newlines
+    .trim();
 }
